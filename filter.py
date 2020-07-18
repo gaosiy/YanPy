@@ -2,7 +2,20 @@ from scipy import signal
 import numpy as np
 import matplotlib.pyplot as plt
 
+def save2txt(data, filename):
+    """
+    Save data matrix into a .txt file. The first line will contain the sampling rate.
 
+    :param numpy.array data: data matrix
+    :param float sampling_rate: sampling rate
+    :param str filename: file name
+    """
+    shape = np.shape(data)
+
+    with open(filename, 'w') as data_file:
+        for i in range(shape[0]):
+            data_file.write(str(data[i]))
+            data_file.write('\n')
 def read_txt(filename, sampling_rate=0):
     """
     Reading data from txt file, each column will be loaded as a signal.
@@ -56,8 +69,8 @@ def smooth(x):
     return fx
 
 
-xn, hdr = read_txt('src.txt')
-rawdata = xn.reshape((99999,))
+xn, hdr = read_txt('src.txt',1000)
+rawdata = xn.reshape((10000,))
 # t = np.linspace(-1, 1, 201)
 # x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
 #      0.1*np.sin(2*np.pi*1.25*t + 1) +
@@ -67,22 +80,21 @@ rawdata = xn.reshape((99999,))
 b = [0.0000046818, 0, -0.0000140454, 0, 0.0000140454, 0, -0.0000046818]
 a = [1, -5.85422751575530, 14.3770740015921, -18.9564010023544, 14.1524743840052, -5.67275169886819, 0.953866160622467]
 
-zi = signal.lfilter_zi(b, a)
-dss = zi
+dss = signal.lfilter_zi(b, a)
 datarealfilter = []
 rectify = []
 smoothd = []
 datawholelfilter, _ = signal.lfilter(b, a, rawdata, zi=dss)
+save2txt(datawholelfilter, 'wf.txt')
 smwin = 400
-def filter():
-    for i in rawdata:
-        z, dss = signal.lfilter(b, a, [i], zi=dss)
-        datarealfilter.append(z)
-        rectify.append(np.abs(z))
-        smoothd.append(smooth(np.abs(z)))
-filter()
-datawholefilter = signal.filtfilt(b, a, rawdata)
+for i in rawdata:
+    z, dss = signal.lfilter(b, a, [i], zi=dss)
+    datarealfilter.append(z)
+    rectify.append(np.abs(z))
+    smoothd.append(smooth(np.abs(z)))
 
+datawholefilter = signal.filtfilt(b, a, rawdata)
+save2txt(datarealfilter, 'sf.txt')
 fig, ax = plt.subplots(6, 1, sharex=True)
 ax[0].plot(rawdata, label="raw data")
 ax[1].plot(datawholefilter, label="data whole filter")
